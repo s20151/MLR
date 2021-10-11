@@ -74,4 +74,23 @@ for name,variable in variables_fix.items():
     plt.show()
     print()
 
-def korelacja_
+def korelacja_unormowana(a, b):
+    '''Funkcja zwraca unormowną korelację list a i b'''
+    a = (a - np.mean(a)) / (np.std(a)*len(a))
+    b = (b - np.mean(b)) / np.std(b)
+    return np.correlate(a, b)
+
+for name1, variable1, in variables.items():
+    for name2, variable2 in variables.items():
+        print(f"Korelacja miedzy {name1} a {name2}"
+              f" wynosi {korelacja_unormowana(variable1, variable2)}" )
+
+
+plt.plot(moc, przeplyw, ",")
+
+a, b = np.polyfit(moc, przeplyw, 1)
+print(f"wzor prostej: y = {a}*x + {b}" )
+
+yregresja = [a*i + b for i in moc]
+plt.plot(moc, yregresja)
+plt.show()
