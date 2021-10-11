@@ -94,3 +94,7 @@ print(f"wzor prostej: y = {a}*x + {b}" )
 yregresja = [a*i + b for i in moc]
 plt.plot(moc, yregresja)
 plt.show()
+
+moc1 = input("Podaj moc = ")
+przeplyw1 = a*moc1 + b
+print(f"Przeplyw = {round(przeplyw1, 2)} l/min")
