@@ -129,59 +129,90 @@ for nazwa,zmienna in zmienne.items():
 # na podstawie analizy statystyk danej zmiennej.
 
 zmienne_do_naprawienia = {}
-if any(x>10000 for x in przeplyw):
+if any(x > 10000 for x in przeplyw):
     zmienne_do_naprawienia.update({"Przepływ":przeplyw})
-if any(x>10000 for x in temp_zasilania):
+if any(x > 10000 for x in temp_zasilania):
     zmienne_do_naprawienia.update({"Temperatura zasilania":temp_zasilania})
-if any(x>10000 for x in temp_powrotu):
+if any(x > 10000 for x in temp_powrotu):
     zmienne_do_naprawienia.update({"Temperatura powrotu":temp_powrotu})
-if any(x>10000 for x in roznica_temp):
+if any(x > 10000 for x in roznica_temp):
     zmienne_do_naprawienia.update({"Różnica temperatur":roznica_temp})
-if any(x>10000 for x in moc):
+if any(x > 10000 for x in moc):
     zmienne_do_naprawienia.update({"Moc":moc})
+
 ### KONIEC ###
 
 print("\nCZYSZCZENIE DANYCH")
 
-for nazwa,zmienna in zmienne_do_naprawienia.items():
+### ZADANIE (1p.) ###
+# Znaleźć inną metodę wyznaczania progu anomalii w powyższej pętli tak, aby nie była to
+# "hardkodowana" wartość 10000, ale liczba wyznaczana indywidualnie dla każdej zmiennej.
+# Jedna z metod - metoda IQR: https://online.stat.psu.edu/stat200/lesson/3/3.2
+# Inna podpowiedź: https://mateuszgrzyb.pl/3-metody-wykrywania-obserwacji-odstajacych-w-python/
+
+for nazwa, zmienna in zmienne_do_naprawienia.items():
+    zmienna.sort()
+    Q1 = int(len(zmienna)/4)
+    Q3 = Q1*3
+    IQR = (zmienna[Q3] - zmienna[Q1])*3
+    top = zmienna[Q1] + IQR
+    bottom = zmienna[Q3] - IQR
     for index,wartosc in enumerate(zmienna): # Iterujemy po wszystkich obserwacjach
         # Zakładamy (na podstawie analizy danych), że anomalia to wartość powyżej 10000
-        if (wartosc > 10000):
+        if ((wartosc>top) or (wartosc < bottom)):
             print("Dla zmiennej {} pod indeksem {} znaleziono anomalię o wartości {}".format(nazwa, index, wartosc))
             # Wstawiamy medianę:
             mediana = np.median(zmienna)
             print("Naprawiam. Stara wartość: {}, nowa wartość: {}".format(zmienna[index], mediana))
             zmienna[index] = mediana
 
-### ZADANIE (1p.) ###
-# Znaleźć inną metodę wyznaczania progu anomalii w powyższej pętli tak, aby nie była to
-# "hardkodowana" wartość 10000, ale liczba wyznaczana indywidualnie dla każdej zmiennej.
-# Jedna z metod - metoda IQR: https://online.stat.psu.edu/stat200/lesson/3/3.2
-# Inna podpowiedź: https://mateuszgrzyb.pl/3-metody-wykrywania-obserwacji-odstajacych-w-python/ 
 ### KONIEC ###
-from contextlib import redirect_stdout
 # Statystyki dla naprawionych zmiennych
-for nazwa,zmienna in zmienne.items():
-    print("\nZmienna (naprawiona):",nazwa)
-    print("MIN:", min(zmienna))
-    print("MAX:", max(zmienna))
-    print("ŚREDNIA:", np.mean(zmienna))
-    print("MEDIANA:", np.median(zmienna))
-    print("ZAKRES:", np.ptp(zmienna))
-    print("ODCHYLENIE STANDARDOWE:", np.std(zmienna))
-    print("WARIANCJA:", np.var(zmienna))
-    print("PERCENTYL 90%:", np.percentile(zmienna,90))
-    print("HISTOGRAM:", np.histogram(zmienna))
-    plt.hist(zmienna, 100)
-    plt.title('Histogram dla: ' + nazwa)
-    plt.xlabel('Przedział')
-    plt.ylabel('Liczba obserwacji')
-    plt.savefig(nazwa + ".pdf")
-    plt.show()
 
 ### ZADANIE (1p.) ###
 # Zapisać powyższe statystyki i wykresy do plików PDF, osobnych dla poszczególnych zmiennych
 # (można wykorzystać dowolny moduł/bibliotekę).
+
+import os
+from fpdf import FPDF
+for nazwa,zmienna in zmienne.items():
+    plik = open(f"{nazwa}.txt", "w", encoding="utf-8")
+    print("\nZmienna (naprawiona):",nazwa, file=plik)
+    print("MIN:", min(zmienna), file=plik)
+    print("MAX:", max(zmienna), file=plik)
+    print("ŚREDNIA:", np.mean(zmienna), file=plik)
+    print("MEDIANA:", np.median(zmienna), file=plik)
+    print("ZAKRES:", np.ptp(zmienna), file=plik)
+    print("ODCHYLENIE STANDARDOWE:", np.std(zmienna), file=plik)
+    print("WARIANCJA:", np.var(zmienna), file=plik)
+    print("PERCENTYL 90%:", np.percentile(zmienna,90), file=plik)
+    print("HISTOGRAM:", np.histogram(zmienna), file=plik)
+    plik.close()
+    pdf = FPDF()
+    pdf.add_page()
+    plt.hist(zmienna, 100)
+    pdf.set_font("Arial", size=15)
+    f = open(f"{nazwa}.txt", "r", encoding="utf-8")
+    for x in f:
+        x = x.encode('latin-1', 'replace').decode('latin-1')
+        pdf.cell(200, 10, txt=x, ln=1, align='C')
+    pdf.output(f'{nazwa}txt.pdf')
+    plt.title('Histogram dla: ' + nazwa)
+    plt.xlabel('Przedział')
+    plt.ylabel('Liczba obserwacji')
+    plt.savefig(f"{nazwa}wykres.pdf")
+    plt.show()
+    from PyPDF2 import PdfFileMerger
+    pdfs = [f'{nazwa}txt.pdf', f'{nazwa}wykres.pdf']
+    merger = PdfFileMerger()
+    for pdf in pdfs:
+        merger.append(pdf)
+    merger.write(f"{nazwa}.pdf")
+    merger.close()
+    f.close()
+    os.remove(f'{nazwa}txt.pdf')
+    os.remove(f"{nazwa}wykres.pdf")
+    os.remove(f"{nazwa}.txt")
 
 
 ### KONIEC ###
@@ -366,4 +397,10 @@ print("Wyniki predykcji temp_powrotu(roznica_temp):",temp_powrotu)
 
 ### ZADANIE (0.5p.) ###
 # Zapisać wyniki powyższej predykcji do pliku JSON o nazwie predykcja.json
+
+import json
+temp_powrotu_json = json.dumps(temp_powrotu)
+with open("predykcja.json", "w") as json_file:
+    json.dump(temp_powrotu_json, json_file)
+
 ### KONIEC ###
