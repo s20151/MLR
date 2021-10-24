@@ -191,11 +191,13 @@ for nazwa,zmienna in zmienne.items():
     pdf = FPDF()
     pdf.add_page()
     plt.hist(zmienna, 100)
-    pdf.set_font("Arial", size=15)
+    pdf.set_font('Arial', '', 14)
     f = open(f"{nazwa}.txt", "r", encoding="utf-8")
     for x in f:
+        #ignorujemy polskie znaki, aby uniknąć konieczności pobierania nowej czcionki
         x = x.encode('latin-1', 'replace').decode('latin-1')
         pdf.cell(200, 10, txt=x, ln=1, align='C')
+    f.close()
     pdf.output(f'{nazwa}txt.pdf')
     plt.title('Histogram dla: ' + nazwa)
     plt.xlabel('Przedział')
@@ -209,8 +211,8 @@ for nazwa,zmienna in zmienne.items():
         merger.append(pdf)
     merger.write(f"{nazwa}.pdf")
     merger.close()
-    f.close()
-    os.remove(f'{nazwa}txt.pdf')
+
+    os.remove(f"{nazwa}txt.pdf")
     os.remove(f"{nazwa}wykres.pdf")
     os.remove(f"{nazwa}.txt")
 
